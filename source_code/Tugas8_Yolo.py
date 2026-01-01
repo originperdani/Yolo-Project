@@ -3,6 +3,8 @@ import cv2
 import os
 import re
 
+ENABLE_WEBCAM = False 
+
 model = YOLO("yolov8m.pt")
 
 img_input_folder = "dataset/Gambar"
@@ -16,6 +18,7 @@ os.makedirs(vid_output_folder, exist_ok=True)
 TARGET_CLASSES = ["backpack", "handbag", "suitcase"]
 
 def get_image_number(filename):
+
     match = re.search(r'(\d+)', filename)
     if match:
         return int(match.group(1))
@@ -80,7 +83,7 @@ else:
 print(f"Processing videos from {vid_input_folder}...")
 if os.path.exists(vid_input_folder):
     for filename in os.listdir(vid_input_folder):
-        if filename.lower().endswith((".mp4", ".avi", ".mov", ".mkv")):
+        if filename.lower().endswith((".mp4", ".avi", ".mov", ".mkv", ".MP4")):
             video_path = os.path.join(vid_input_folder, filename)
             cap = cv2.VideoCapture(video_path)
             
@@ -110,5 +113,32 @@ if os.path.exists(vid_input_folder):
             print(f"Saved Video: {out_filename}")
 else:
     print(f"Folder {vid_input_folder} not found (skip if no videos).")
+
+# --- Process Webcam ---
+if ENABLE_WEBCAM:
+    print("Starting Webcam... Press 'q' to exit.")
+    cap = cv2.VideoCapture(0)
+    
+    if not cap.isOpened():
+        print("Error: Could not open webcam.")
+    else:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                print("Failed to grab frame")
+                break
+            
+            # Process frame (is_video=True to avoid filename logic)
+            frame = process_frame(frame, filename_context=None, is_video=True)
+            
+            # Show result
+            cv2.imshow("Webcam Detection - Press 'q' to exit", frame)
+            
+            # Break on 'q'
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+        
+        cap.release()
+        cv2.destroyAllWindows()
 
 print("All tasks completed.")
